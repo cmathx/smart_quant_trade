@@ -1,0 +1,141 @@
+一、常用参数
+股票市场	标识
+港股	“HK”
+美股	“US”
+沪股	“SH”
+深股	“SZ”
+香港期货	“HK_FUTURE”
+
+K线类型:
+1分K	“K_1M”
+5分K	“K_5M”
+15分K	“K_15M”
+30分K	“K_30M”
+60分K	“K_60M”
+日K	“K_DAY”
+周K	“K_WEEK”
+月K	“K_MON”
+
+K线字段类型
+字段标识	说明
+KL_FIELD.ALL	所有字段
+KL_FIELD.DATE_TIME	K线时间
+KL_FIELD.OPEN	开盘价
+KL_FIELD.CLOSE	收盘价
+KL_FIELD.HIGH	最高价
+KL_FIELD.LOW	最低价
+KL_FIELD.PE_RATIO	市盈率
+KL_FIELD.TRADE_VOL	成交量
+KL_FIELD.TRADE_VAL	成交额
+KL_FIELD.CHANGE_RATE	涨跌幅
+
+二、返回值
+错误码说明
+错误码	错误说明
+0	无错误
+400	未知错误
+401	版本不支持
+402	股票未找到
+403	协议号不支持
+404	参数错误
+405	频率错误（请求过快）
+406	订阅达到上限
+407	未订阅
+408	未满足反订阅时间限制
+501	服务器忙
+502	超时
+503	网络错误
+504	操作不允许
+505	未知订单
+
+三、函数
+0）实例化上下文对象
+quote_ctx = OpenQuoteContext(host='127.0.0.1', port=11111)
+quote_ctx.start()
+quote_ctx.stop()
+quote_ctx.set_handler(handler)
+1）获取股票信息 get_stock_basicinfo
+ret_code, ret_data = quote_ctx.get_stock_basicinfo(market, stock_type='STOCK')
+2）获取历史K线 get_history_kline
+ret_code, ret_data = quote_ctx.get_history_kline(code, start=None, end=None, ktype='K_DAY', autype='qfq', fields=[KL_FIELD.ALL])
+参数：
+	start ：开始时间，string; YYYY-MM-DD；为空时取去当前时间;
+	end ： 结束时间，string; YYYY-MM-DD；为空时取当前时间;
+	ktype ：k线类型，默认为日K
+	autype: 复权类型，string；”qfq”-前复权，”hfq”-后复权，None-不复权，默认为”qfq”
+	fields: 单个或多个K线字段类型，指定需要返回的数据 KL_FIELD.ALL or [KL_FIELD.DATE_TIME, KL_FIELD.OPEN]，默认为KL_FIELD.ALL
+返回：
+	code： 股票代码；string
+	time_key： K线时间 string “YYYY-MM-DD HH:mm:ss
+	open： 开盘价；doubl
+	high： 最高价；double
+	close： 收盘价；double
+	low： 最低价；double
+	volume： 成交量；long
+	turnover ： 成交额；double
+	pe_ratio： 市盈率；double
+	turnover_rate: 换手率；double
+	change_rate: 涨跌幅；double
+3）获取市场快照 get_market_snapshot
+ret_code, ret_data = quote_ctx.get_market_snapshot(code_list)
+功能：
+	一次性获取最近当前股票列表的快照数据（每日变化的信息），该接口对股票个数有限制，一次最多传入200只股票，频率限制每5秒一次;
+参数：
+	code_list: 股票代码列表，例如，HK.00700，US.AAPL。
+返回：
+	ret_code失败时，ret_data返回为错误描述字符串； 客户端无符合条件数据时，ret_code为成功，ret_data返回None； 正常情况下，ret_data为一个dataframe，其中包括：
+	code ：股票代码；string
+	update_time： 更新时间(yyyy-MM-dd HH:mm:ss)；string
+	last_price ： 最新价格；float
+	open_price： 今日开盘价；float
+	high_price： 最高价格；float
+	low_price： 最低价格；float
+	prev_close_price： 昨收盘价格；float
+	volume： 成交数量； long
+	turnover： 成交金额；float
+	turnover_rate： 换手率；float
+	suspension： 是否停牌(True表示停牌)；bool
+	listing_date ： 上市日期 (yyyy-MM-dd)；string
+	circular_market_val： 流通市值；float
+	total_market_val: 总市值；float
+	wrt_valid： 是否是窝轮；bool
+	wrt_conversion_ratio: 换股比率；float
+	wrt_type： 窝轮类型；1=认购证 2=认沽证 3=牛证 4=熊证 string
+	wrt_strike_price： 行使价格；float
+	wrt_maturity_date: 格式化窝轮到期时间； string
+	wrt_end_trade: 格式化窝轮最后交易时间；string
+	wrt_code: 窝轮对应的正股；string
+	wrt_recovery_price: 窝轮回收价；float
+	wrt_street_vol: 窝轮街货量；float
+	wrt_issue_vol: 窝轮发行量；float
+	wrt_street_ratio: 窝轮街货占比；float
+	wrt_delta: 窝轮对冲值；float
+	wrt_implied_volatility: 窝轮引伸波幅；float
+	wrt_premium: 窝轮溢价；float
+	lot_size：每手股数；int
+	issued_Shares：发行股本；int
+	net_asset：资产净值；int
+	net_profit：净利润；int
+	earning_per_share： 每股盈利；float
+	outstanding_shares：流通股本；int
+	net_asset_per_share：每股净资产；float
+	ey_ratio：收益率；float
+	pe_ratio：市盈率；float
+	pb_ratio：市净率；float
+	price_spread ： 当前摆盘价差亦即摆盘数据的买档或卖档的相邻档位的报价差；float
+	返回DataFrame，包含上述字段
+4）获取实时K线 get_cur_kline 和 CurKlineHandlerBase
+ret_code, ret_data = quote_ctx.get_cur_kline(code, num, ktype='K_DAY', autype='qfq')
+功能：
+	实时获取指定股票最近num个K线数据，最多1000根
+参数：
+	code 股票代码
+	ktype k线类型，和get_history_kline一样
+	autype 复权类型，string；qfq-前复权，hfq-后复权，None-不复权，默认为qfq
+	对于实时K线数据最多取最近1000根
+返回：
+	ret_code失败时，ret_data为错误描述字符串； 客户端无符合条件数据时，ret为成功，ret_data返回None； 通常情况下，返回DataFrame。
+失败情况：
+	code不合法
+	该股票未对指定K线类型订阅
+	客户端内部或网络错误
